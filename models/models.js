@@ -1,26 +1,76 @@
 const { sequelize } = require('../db');
 const { DataTypes } = require('sequelize');
 
+const Position = sequelize.define('position', {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  name: { type: DataTypes.STRING, allowNull: false },
+});
+
 const User = sequelize.define('user', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
   name: { type: DataTypes.STRING, unique: false, allowNull: true, defaultValue: '' },
+  positionId: { type: DataTypes.STRING, unique: false, allowNull: true, defaultValue: '' },
   mail: { type: DataTypes.STRING, unique: true, allowNull: true },
   phone: { type: DataTypes.STRING, unique: false, allowNull: false, defaultValue: '' },
   password: { type: DataTypes.STRING, allowNull: true },
   role: { type: DataTypes.STRING, defaultValue: 'USER', allowNull: false },
-  prevCodeDatetime: { type: DataTypes.DATE, allowNull: true },
-  wrongRecoveryCodeAttempts: { type: DataTypes.INTEGER, defaultValue: 0, allowNull: true },
-  recoveryCode: { type: DataTypes.STRING, unique: false, allowNull: true, defaultValue: '' },
-  category: { type: DataTypes.STRING, unique: false, allowNull: false, defaultValue: 'Basic' },
-  discount: { type: DataTypes.INTEGER, defaultValue: 0, allowNull: true },
-  total: { type: DataTypes.INTEGER, defaultValue: 0, allowNull: true },
+});
+
+const Pet = sequelize.define('pet', {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  name: { type: DataTypes.STRING, unique: false, allowNull: true, defaultValue: '' },
+  breed: { type: DataTypes.STRING, unique: true, allowNull: true },
+  weight: { type: DataTypes.INTEGER, unique: false, allowNull: false, defaultValue: 0 },
+  age: { type: DataTypes.INTEGER, unique: false, allowNull: false, defaultValue: 0 },
+  comment: { type: DataTypes.TEXT, unique: false, allowNull: true, defaultValue: '' },
+  clientId: { type: DataTypes.INTEGER, allowNull: false },
+
+  isDeleted: { type: DataTypes.BOOLEAN, unique: false, defaultValue: false },
+});
+
+const Client = sequelize.define('client', {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  name: { type: DataTypes.STRING, unique: false, allowNull: true, defaultValue: '' },
+  mail: { type: DataTypes.STRING, unique: true, allowNull: true },
+  phone: { type: DataTypes.STRING, unique: false, allowNull: false, defaultValue: '' },
+  total: { type: DataTypes.INTEGER, unique: false, allowNull: false, defaultValue: 0 },
+  
+  isDeleted: { type: DataTypes.BOOLEAN, unique: false, defaultValue: false },
+});
+
+const Appointment = sequelize.define('appointment', {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  userId: { type: DataTypes.INTEGER, allowNull: false },
+  clientId: { type: DataTypes.INTEGER, allowNull: false },
+  date: { type: DataTypes.DATEONLY, allowNull: false },
+  time: { type: DataTypes.TIME, allowNull: false },
+  endTime: { type: DataTypes.TIME, allowNull: false },
+  note: { type: DataTypes.TEXT, allowNull: true },
+  petId: { type: DataTypes.INTEGER, allowNull: false },
+});
+
+const Service = sequelize.define('service', {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  name: { type: DataTypes.STRING, allowNull: false, unique: false },
+  price: { type: DataTypes.INTEGER, allowNull: false },
+  duration: { type: DataTypes.INTEGER, allowNull: false },
+});
+
+const ServiceProduct = sequelize.define('serviceProduct', {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  productId: { type: DataTypes.INTEGER, allowNull: false },
+  quantity: { type: DataTypes.FLOAT, allowNull: false },
+});
+
+const AppointmentService = sequelize.define('appointmentService', {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  appointmentId: { type: DataTypes.INTEGER, allowNull: false },
+  serviceId: { type: DataTypes.INTEGER, allowNull: false },
 });
 
 const Category = sequelize.define('category', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
   name: { type: DataTypes.STRING, unique: false, allowNull: false, defaultValue: '' },
-  link: { type: DataTypes.STRING, unique: true, allowNull: false, defaultValue: '' },
-  description: { type: DataTypes.TEXT, unique: true, allowNull: false, defaultValue: '' },
   parentId: { type: DataTypes.INTEGER, unique: false, allowNull: true },
   isDeleted: { type: DataTypes.BOOLEAN, unique: false, defaultValue: false },
 });
@@ -32,94 +82,100 @@ const Product = sequelize.define('product', {
   link: { type: DataTypes.STRING, unique: true, allowNull: false, defaultValue: '' },
   images: { type: DataTypes.JSON, unique: false, allowNull: false},
   price: { type: DataTypes.FLOAT, unique: false, allowNull: false, defaultValue: 0 },
-  old_price: { type: DataTypes.FLOAT, unique: false, allowNull: false, defaultValue: 0 },
-  categoryId: { type: DataTypes.INTEGER, unique: false, allowNull: true },
   count: { type: DataTypes.INTEGER, unique: false, defaultValue: 0 },
   
-  about: { type: DataTypes.TEXT, unique: false, allowNull: false, defaultValue: '' },
+  quantity: { type: DataTypes.FLOAT, unique: false, defaultValue: 0 },
+  // единица измерения
+  measurementUnit: { type: DataTypes.STRING, unique: false, allowNull: false, defaultValue: '' },
   
-  weight: { type: DataTypes.INTEGER, unique: false, allowNull: true },
-  variation: {type: DataTypes.ARRAY(DataTypes.STRING)},
-  processing: {type: DataTypes.ARRAY(DataTypes.STRING)},
-  fermentation: {type: DataTypes.ARRAY(DataTypes.STRING)},
-  region: { type: DataTypes.STRING, allowNull: true },
-  farmer: { type: DataTypes.STRING, allowNull: true },
-  keyDescriptor: { type: DataTypes.STRING, allowNull: true },
-  
+  isForService: { type: DataTypes.BOOLEAN, unique: false, defaultValue: false },
   isDeleted: { type: DataTypes.BOOLEAN, unique: false, defaultValue: false },
 });
 
-const Order = sequelize.define('order', {
+const Sale = sequelize.define('sale', {
   id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
   userId: { type: DataTypes.INTEGER, allowNull: false },
-  state: { type: DataTypes.STRING, allowNull: false },
   sum: { type: DataTypes.FLOAT, allowNull: false },
 });
 
-const OrderProduct = sequelize.define('orderProduct', {
+const SaleProduct = sequelize.define('saleProduct', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-  orderId: { type: DataTypes.UUID, allowNull: false },
+  saleId: { type: DataTypes.UUID, allowNull: false },
   productId: { type: DataTypes.INTEGER, allowNull: false },
   count: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
 });
 
-const CartProduct = sequelize.define('cartProduct', {
+const Schedule = sequelize.define('schedule', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-  session: { type: DataTypes.UUID, allowNull: true },
-  userId: { type: DataTypes.INTEGER, allowNull: true },
-  productId: { type: DataTypes.INTEGER, allowNull: false },
-  count: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
-});
-
-const RecipeCategory = sequelize.define('recipeCategory', {
-  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-  name: { type: DataTypes.TEXT, unique: false, allowNull: false},
-  description: { type: DataTypes.TEXT, unique: false, allowNull: false},
-  imageUrl: { type: DataTypes.STRING, unique: false, allowNull: false, defaultValue: '' },
-  previewUrl: { type: DataTypes.STRING, unique: false, allowNull: false, defaultValue: '' },
-  
-  isDeleted: { type: DataTypes.BOOLEAN, unique: false, defaultValue: false },
-});
-
-const Recipe = sequelize.define('recipe', {
-  id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
-  link: { type: DataTypes.STRING, unique: true, allowNull: false, defaultValue: '' },
-  recipeCategoryId: { type: DataTypes.INTEGER, allowNull: false },
-  name: { type: DataTypes.TEXT, unique: false, allowNull: false},
-  steps: { type: DataTypes.JSON, unique: false, allowNull: false},
-  productId: { type: DataTypes.INTEGER, allowNull: true },
-  
-  isDeleted: { type: DataTypes.BOOLEAN, unique: false, defaultValue: false },
+  userId: { type: DataTypes.INTEGER, allowNull: false },
+  isMon: { type: DataTypes.BOOLEAN, allowNull: false },
+  isTue: { type: DataTypes.BOOLEAN, allowNull: false },
+  isWed: { type: DataTypes.BOOLEAN, allowNull: false },
+  isThu: { type: DataTypes.BOOLEAN, allowNull: false },
+  isFri: { type: DataTypes.BOOLEAN, allowNull: false },
+  isSat: { type: DataTypes.BOOLEAN, allowNull: false },
+  isSun: { type: DataTypes.BOOLEAN, allowNull: false },
+  monFrom: { type: DataTypes.TIME, allowNull: false },
+  monTo: { type: DataTypes.TIME, allowNull: false },
+  tueFrom: { type: DataTypes.TIME, allowNull: false },
+  tueTo: { type: DataTypes.TIME, allowNull: false },
+  wedFrom: { type: DataTypes.TIME, allowNull: false },
+  wedTo: { type: DataTypes.TIME, allowNull: false },
+  thuFrom: { type: DataTypes.TIME, allowNull: false },
+  thuTo: { type: DataTypes.TIME, allowNull: false },
+  friFrom: { type: DataTypes.TIME, allowNull: false },
+  friTo: { type: DataTypes.TIME, allowNull: false },
+  satFrom: { type: DataTypes.TIME, allowNull: false },
+  satTo: { type: DataTypes.TIME, allowNull: false },
+  sunFrom: { type: DataTypes.TIME, allowNull: false },
+  sunTo: { type: DataTypes.TIME, allowNull: false },
+  branchId: { type: DataTypes.INTEGER, allowNull: false },
 });
 
 Product.belongsTo(Category)
 Category.hasMany(Product);
 
-Order.belongsTo(User)
-User.hasMany(Order);
+Sale.belongsTo(User)
+User.hasMany(Sale);
 
-OrderProduct.belongsTo(Product)
-Product.hasMany(OrderProduct);
-OrderProduct.belongsTo(Order)
-Order.hasMany(OrderProduct);
+SaleProduct.belongsTo(Sale);
+Sale.hasMany(SaleProduct);
+SaleProduct.belongsTo(Product);
+Product.hasMany(SaleProduct);
 
-CartProduct.belongsTo(Product)
-Product.hasMany(CartProduct);
-CartProduct.belongsTo(User)
-User.hasMany(CartProduct);
+Appointment.belongsTo(Client);
+Client.hasMany(Appointment);
+Appointment.belongsTo(User);
+User.hasMany(Appointment);
 
-Recipe.belongsTo(Product)
-Product.hasMany(Recipe);
-Recipe.belongsTo(RecipeCategory)
-RecipeCategory.hasMany(Recipe);
+Pet.belongsTo(Client);
+Client.hasMany(Pet);
+
+AppointmentService.belongsTo(Appointment);
+Appointment.hasMany(AppointmentService);
+Appointment.belongsTo(Pet);
+Pet.hasMany(Appointment);
+AppointmentService.belongsTo(Service);
+Service.hasMany(AppointmentService);
+
+ServiceProduct.belongsTo(Service);
+Service.hasMany(ServiceProduct);
+
+Schedule.belongsTo(User);
+Position.belongsTo(User);
 
 module.exports = {
   User,
   Category,
   Product,
-  Order,
-  OrderProduct,
-  CartProduct,
-  Recipe,
-  RecipeCategory
+  Sale,
+  SaleProduct,
+  Appointment,
+  Client,
+  Service,
+  AppointmentService,
+  ServiceProduct,
+  Schedule,
+  Position,
+  Pet
 };
