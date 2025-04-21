@@ -1,21 +1,110 @@
 const ApiError = require('../error/ApiError')
-const {User, Category, Product, Client} = require('../models/models')
+const { slugify } = require('transliteration');
+const {Client, Appointment, Sale, User, AppointmentService, Service} = require('../models/models')
+const { fn, col, literal } = require('sequelize');
+const {sequelize} = require('../db')
 
 class ClientsController {
     async fetch(req, res, next) {
         try {
-            const clients = await Client.findAll({order: [['name', 'ASC']]})
-            return res.json(clients)
+            let {page, limit, search} = req.query
+
+            page = page || 1
+            limit = limit || 1000
+            let offset = page * limit - limit
+
+            const engSearch = (search && search.length > 1) ? slugify(search.toLowerCase(), {separator: " "}) : null;
+
+            const options = {
+                subQuery: false,
+                where: {isDeleted: false},
+                include: [
+                  {
+                    model: Appointment,
+                    attributes: [],
+                    required: false,
+                    where: { isDeleted: false },
+                  },
+                  {
+                    model: Sale,
+                    attributes: [],
+                    required: false,
+                    where: { isDeleted: false },
+                  },
+                ],
+                attributes: {
+                  include: [
+                    [fn('COALESCE', fn('SUM', col('appointments.sum')), 0), 'appointmentsTotal'],
+                    [fn('COALESCE', fn('SUM', col('sales.sum')), 0), 'salesTotal'],
+                    [
+                      literal(
+                        'COALESCE(SUM(appointments.sum),0) + COALESCE(SUM(sales.sum),0)',
+                      ),
+                      'total',
+                    ],
+                  ],
+                },
+                group: ['client.id'],
+                order: [['surname', 'ASC']],
+                limit, 
+                offset
+              };
+
+            if (engSearch) {
+                const SIM_THRESHOLD = 0.05;
+            
+                options.where = literal(
+                    `similarity("fullNameEng", ${sequelize.escape(engSearch)}) >= ${SIM_THRESHOLD}`,
+                );
+            
+                options.order = [
+                    [
+                    literal(
+                        `similarity("fullNameEng", ${sequelize.escape(engSearch)})`,
+                    ),
+                    'DESC',
+                    ],
+                ];
+            }          
+          
+            const count = await Client.count({ where: options.where, distinct: true, col: 'id' })
+            const clients = await Client.findAndCountAll(options);
+            clients.count = count;
+            return res.json(clients);
         } catch (e) {
             next(ApiError.badRequest(e.message))
         }
     }
-
+    
     async fetchOne(req, res, next) {
         try {
             const { id } = req.params;
             const client = await Client.findByPk(id)
-            return res.json(client)
+            
+            const appointments = await Appointment.findAll({
+                where: {clientId: client.id, isDeleted: false},
+                include: [
+                    { model: User, required: true },
+                    {
+                        model: AppointmentService,
+                        required: true,
+                        attributes: ["id"],
+                        include: [
+                            {
+                                model: Service,
+                                required: true,
+                            },
+                        ],
+                    },
+                ]
+            })
+
+            const appointmentsTotal = appointments.reduce((accum, item) => accum + item.sum, 0)
+            const sales = await Sale.findAll({where: {clientId: client.id, isDeleted: false}})
+            const salesTotal = sales.reduce((accum, item) => accum + item.sum, 0)
+            const total = appointmentsTotal + salesTotal
+
+            return res.json({client, total, appointments})
         } catch (e) {
             next(ApiError.badRequest(e.message))
         }
@@ -23,18 +112,30 @@ class ClientsController {
 
     async create(req, res, next) {
         try {
-            const {name, mail, phone} = req.body
-            const client = await Client.create({name, mail, phone})
+            const {surname, firstName, middleName, birth, mail, phone} = req.body
+
+            if (!surname) {
+                return next(ApiError.badRequest("Фамилия клиента не указана"))
+            }
+
+            const fullNameEng = slugify(`${surname}${firstName ? ' ' + firstName : ''}${middleName ? ' ' + middleName : ''}`, {separator: " "})
+
+            const client = await Client.create({surname, firstName, middleName, fullNameEng, birth, mail, phone})
             return res.json(client)
         } catch (e) {
+            console.log(e)
             next(ApiError.badRequest(e.message))
         }
     }
     async update(req, res, next) {
         try {
-            const {id} = req.query;
-            const {name, mail, phone} = req.body
-            const client = await Client.update({name, mail, phone}, {where: {id}, returning: true})
+            const {id} = req.params;
+            const {surname, firstName, middleName, birth, mail, phone} = req.body
+
+            const fullNameEng = slugify(`${surname}${firstName ? ' ' + firstName : ''}${middleName ? ' ' + middleName : ''}`, {separator: " "})
+
+            const client = await Client.update({surname, firstName, middleName, fullNameEng, birth, mail, phone}, {where: {id}, returning: true})
+            
             return res.json(client[1][0])
         } catch (e) {
             next(ApiError.badRequest(e.message))
@@ -43,7 +144,7 @@ class ClientsController {
 
     async delete (req, res, next) {
         try {
-            let {id} = req.query;
+            let {id} = req.params;
             await Client.update({isDeleted: true}, {where: {id}})
             return res.json("Deleted successfully");
         } catch (e) {

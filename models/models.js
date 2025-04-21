@@ -8,58 +8,94 @@ const Position = sequelize.define('position', {
 
 const User = sequelize.define('user', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-  name: { type: DataTypes.STRING, unique: false, allowNull: true, defaultValue: '' },
-  positionId: { type: DataTypes.STRING, unique: false, allowNull: true, defaultValue: '' },
   mail: { type: DataTypes.STRING, unique: true, allowNull: true },
-  phone: { type: DataTypes.STRING, unique: false, allowNull: false, defaultValue: '' },
   password: { type: DataTypes.STRING, allowNull: true },
+  positionId: { type: DataTypes.INTEGER, unique: false, allowNull: false },
+  surname: { type: DataTypes.STRING, allowNull: false },
+  firstName: { type: DataTypes.STRING, allowNull: true },
+  middleName: { type: DataTypes.STRING, allowNull: true },
   role: { type: DataTypes.STRING, defaultValue: 'USER', allowNull: false },
+  phone: { type: DataTypes.STRING, unique: false, allowNull: false, defaultValue: '' },
+  birth: { type: DataTypes.DATEONLY, unique: false, allowNull: true },
+
+  isDeleted: { type: DataTypes.BOOLEAN, unique: false, defaultValue: false },
 });
 
 const Pet = sequelize.define('pet', {
-  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-  name: { type: DataTypes.STRING, unique: false, allowNull: true, defaultValue: '' },
-  breed: { type: DataTypes.STRING, unique: true, allowNull: true },
-  weight: { type: DataTypes.INTEGER, unique: false, allowNull: false, defaultValue: 0 },
-  age: { type: DataTypes.INTEGER, unique: false, allowNull: false, defaultValue: 0 },
-  note: { type: DataTypes.TEXT, unique: false, allowNull: true, defaultValue: '' },
-  clientId: { type: DataTypes.INTEGER, allowNull: false },
+    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+    name: { type: DataTypes.STRING, unique: false, allowNull: true, defaultValue: '' },
+    nameEng: { type: DataTypes.STRING, unique: false, allowNull: true, defaultValue: '' },
+    sex: { type: DataTypes.STRING, unique: false, allowNull: true },
+    birth: { type: DataTypes.DATEONLY, unique: false, allowNull: true },
+    breed: { type: DataTypes.STRING, unique: false, allowNull: true },
+    feautures: { type: DataTypes.TEXT, unique: false, allowNull: true, defaultValue: '' },
+    clientId: { type: DataTypes.INTEGER, allowNull: false },
 
-  isDeleted: { type: DataTypes.BOOLEAN, unique: false, defaultValue: false },
-});
+    isDeleted: { type: DataTypes.BOOLEAN, unique: false, defaultValue: false },
+  },
+  {
+    indexes: [
+      {
+        fields: ['nameEng'],
+        using: 'gin',
+        operator: 'gin_trgm_ops',
+        concurrently: true,
+      },
+    ],
+  },
+);
 
 const Client = sequelize.define('client', {
-  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-  name: { type: DataTypes.STRING, unique: false, allowNull: true, defaultValue: '' },
-  mail: { type: DataTypes.STRING, unique: true, allowNull: true },
-  phone: { type: DataTypes.STRING, unique: false, allowNull: false, defaultValue: '' },
-  total: { type: DataTypes.INTEGER, unique: false, allowNull: false, defaultValue: 0 },
-  
-  isDeleted: { type: DataTypes.BOOLEAN, unique: false, defaultValue: false },
-});
+    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+    surname: { type: DataTypes.STRING, allowNull: false },
+    firstName: { type: DataTypes.STRING, allowNull: true },
+    middleName: { type: DataTypes.STRING, allowNull: true },
+    fullNameEng: { type: DataTypes.STRING, allowNull: true },
+    birth: { type: DataTypes.DATEONLY, unique: false, allowNull: true },
+    mail: { type: DataTypes.STRING, unique: true, allowNull: true },
+    phone: { type: DataTypes.STRING, unique: false, allowNull: false, defaultValue: '' },
+
+    isDeleted: { type: DataTypes.BOOLEAN, unique: false, defaultValue: false },
+  },
+  {
+    indexes: [
+      {
+        fields: ['fullNameEng'],
+        using: 'gin',
+        operator: 'gin_trgm_ops',
+        concurrently: true,
+      },
+    ],
+  },
+);
 
 const Appointment = sequelize.define('appointment', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-  userId: { type: DataTypes.INTEGER, allowNull: false },
   clientId: { type: DataTypes.INTEGER, allowNull: false },
+  petId: { type: DataTypes.INTEGER, allowNull: false },
+  userId: { type: DataTypes.INTEGER, allowNull: false },
   date: { type: DataTypes.DATEONLY, allowNull: false },
   time: { type: DataTypes.TIME, allowNull: false },
   endTime: { type: DataTypes.TIME, allowNull: false },
   note: { type: DataTypes.TEXT, allowNull: true },
-  petId: { type: DataTypes.INTEGER, allowNull: false },
+  sum: { type: DataTypes.FLOAT, allowNull: false },
+
+  isDeleted: { type: DataTypes.BOOLEAN, unique: false, defaultValue: false },
 });
 
 const Service = sequelize.define('service', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
   name: { type: DataTypes.STRING, allowNull: false, unique: false },
-  price: { type: DataTypes.INTEGER, allowNull: false },
+  price: { type: DataTypes.FLOAT, allowNull: false },
   duration: { type: DataTypes.INTEGER, allowNull: false },
+  servicesGroupId: {type: DataTypes.INTEGER, allowNull: true},
+
+  isDeleted: { type: DataTypes.BOOLEAN, unique: false, defaultValue: false },
 });
 
-const ServiceProduct = sequelize.define('serviceProduct', {
+const ServicesGroup = sequelize.define('servicesGroup', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-  productId: { type: DataTypes.INTEGER, allowNull: false },
-  quantity: { type: DataTypes.FLOAT, allowNull: false },
+  name: { type: DataTypes.STRING, allowNull: false, unique: false },
 });
 
 const AppointmentService = sequelize.define('appointmentService', {
@@ -68,25 +104,11 @@ const AppointmentService = sequelize.define('appointmentService', {
   serviceId: { type: DataTypes.INTEGER, allowNull: false },
 });
 
-const Category = sequelize.define('category', {
-  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-  name: { type: DataTypes.STRING, unique: false, allowNull: false, defaultValue: '' },
-  parentId: { type: DataTypes.INTEGER, unique: false, allowNull: true },
-  isDeleted: { type: DataTypes.BOOLEAN, unique: false, defaultValue: false },
-});
-
 const Product = sequelize.define('product', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
   name: { type: DataTypes.STRING, unique: false, allowNull: false, defaultValue: '' },
-  description: { type: DataTypes.TEXT, unique: false, allowNull: false, defaultValue: '' },
-  link: { type: DataTypes.STRING, unique: true, allowNull: false, defaultValue: '' },
-  images: { type: DataTypes.JSON, unique: false, allowNull: false},
   price: { type: DataTypes.FLOAT, unique: false, allowNull: false, defaultValue: 0 },
   count: { type: DataTypes.INTEGER, unique: false, defaultValue: 0 },
-  
-  quantity: { type: DataTypes.FLOAT, unique: false, defaultValue: 0 },
-  // единица измерения
-  measurementUnit: { type: DataTypes.STRING, unique: false, allowNull: false, defaultValue: '' },
   
   isForService: { type: DataTypes.BOOLEAN, unique: false, defaultValue: false },
   isDeleted: { type: DataTypes.BOOLEAN, unique: false, defaultValue: false },
@@ -95,11 +117,13 @@ const Product = sequelize.define('product', {
 const Sale = sequelize.define('sale', {
   id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
   userId: { type: DataTypes.INTEGER, allowNull: false },
-  clientId: { type: DataTypes.INTEGER, allowNull: false },
+  clientId: { type: DataTypes.INTEGER, allowNull: true },
   sum: { type: DataTypes.FLOAT, allowNull: false },
+
+  isDeleted: { type: DataTypes.BOOLEAN, unique: false, defaultValue: false },
 });
 
-const SaleProduct = sequelize.define('saleProduct', {
+const SaleProduct = sequelize.define('SaleProduct', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
   saleId: { type: DataTypes.UUID, allowNull: false },
   productId: { type: DataTypes.INTEGER, allowNull: false },
@@ -109,7 +133,6 @@ const SaleProduct = sequelize.define('saleProduct', {
 const Purchase = sequelize.define('purchase', {
   id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
   userId: { type: DataTypes.INTEGER, allowNull: false },
-  counterparty: { type: DataTypes.STRING, unique: false, allowNull: false, defaultValue: '' },
   note: { type: DataTypes.TEXT, unique: false, allowNull: false, defaultValue: '' },
   sum: { type: DataTypes.FLOAT, allowNull: false },
 });
@@ -121,36 +144,6 @@ const PurchaseProduct = sequelize.define('purchaseProduct', {
   count: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
 });
 
-const Schedule = sequelize.define('schedule', {
-  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-  userId: { type: DataTypes.INTEGER, allowNull: false },
-  isMon: { type: DataTypes.BOOLEAN, allowNull: false },
-  isTue: { type: DataTypes.BOOLEAN, allowNull: false },
-  isWed: { type: DataTypes.BOOLEAN, allowNull: false },
-  isThu: { type: DataTypes.BOOLEAN, allowNull: false },
-  isFri: { type: DataTypes.BOOLEAN, allowNull: false },
-  isSat: { type: DataTypes.BOOLEAN, allowNull: false },
-  isSun: { type: DataTypes.BOOLEAN, allowNull: false },
-  monFrom: { type: DataTypes.TIME, allowNull: false },
-  monTo: { type: DataTypes.TIME, allowNull: false },
-  tueFrom: { type: DataTypes.TIME, allowNull: false },
-  tueTo: { type: DataTypes.TIME, allowNull: false },
-  wedFrom: { type: DataTypes.TIME, allowNull: false },
-  wedTo: { type: DataTypes.TIME, allowNull: false },
-  thuFrom: { type: DataTypes.TIME, allowNull: false },
-  thuTo: { type: DataTypes.TIME, allowNull: false },
-  friFrom: { type: DataTypes.TIME, allowNull: false },
-  friTo: { type: DataTypes.TIME, allowNull: false },
-  satFrom: { type: DataTypes.TIME, allowNull: false },
-  satTo: { type: DataTypes.TIME, allowNull: false },
-  sunFrom: { type: DataTypes.TIME, allowNull: false },
-  sunTo: { type: DataTypes.TIME, allowNull: false },
-  branchId: { type: DataTypes.INTEGER, allowNull: false },
-});
-
-Product.belongsTo(Category)
-Category.hasMany(Product);
-
 Sale.belongsTo(User)
 User.hasMany(Sale);
 Sale.belongsTo(Client)
@@ -158,6 +151,9 @@ Client.hasMany(Sale);
 
 Purchase.belongsTo(User)
 User.hasMany(Purchase);
+
+Service.belongsTo(ServicesGroup)
+ServicesGroup.hasMany(Service);
 
 SaleProduct.belongsTo(Sale);
 Sale.hasMany(SaleProduct);
@@ -184,17 +180,10 @@ Pet.hasMany(Appointment);
 AppointmentService.belongsTo(Service);
 Service.hasMany(AppointmentService);
 
-ServiceProduct.belongsTo(Service);
-Service.hasMany(ServiceProduct);
-ServiceProduct.belongsTo(Product);
-Product.hasMany(ServiceProduct);
-
-Schedule.belongsTo(User);
-Position.belongsTo(User);
+User.belongsTo(Position);
 
 module.exports = {
   User,
-  Category,
   Product,
   Sale,
   SaleProduct,
@@ -202,10 +191,9 @@ module.exports = {
   Client,
   Service,
   AppointmentService,
-  ServiceProduct,
-  Schedule,
   Position,
   Pet,
   Purchase,
   PurchaseProduct,
+  ServicesGroup
 };
