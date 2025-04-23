@@ -94,25 +94,25 @@ class AppointmentController {
 
     async create(req, res, next) {
         try {
-            const { userId, clientId, date, time, endTime, note, petId, procedures } = req.body
+            const { userId, clientId, date, time, endTime, note, petId, procedures, sum } = req.body
 
             if (!procedures || !Array.isArray(procedures) || procedures.length === 0) {
                 return next(ApiError.badRequest("No procedures provided"))
             }
 
             let totalSum = 0
-            for (const procId of procedures) {
-                const service = await Service.findOne({ where: { id: procId } })
+            for (const proc of procedures) {
+                const service = await Service.findOne({ where: { id: proc.id } })
                 if (!service) {
-                    return next(ApiError.badRequest(`Service with id ${procId} not found`))
+                    return next(ApiError.badRequest(`Service with id ${proc.id} not found`))
                 }
                 totalSum += service.price
             }
 
-            const appointment = await Appointment.create({ userId, clientId, date, time, endTime, note, petId })
+            const appointment = await Appointment.create({ userId, clientId, date, time, endTime, note, petId, sum })
 
-            for (const procId of procedures) {
-                await AppointmentService.create({ appointmentId: appointment.id, serviceId: procId })
+            for (const proc of procedures) {
+                await AppointmentService.create({ appointmentId: appointment.id, serviceId: proc.id })
             }
 
             return res.json(appointment)
@@ -123,8 +123,8 @@ class AppointmentController {
 
     async update(req, res, next) {
         try {
-            const { id } = req.query
-            const { userId, clientId, date, time, endTime, note, petId, procedures } = req.body
+            const { id } = req.params
+            const { userId, clientId, date, time, endTime, note, petId, procedures, sum } = req.body
 
             const appointment = await Appointment.findOne({ where: { id } })
             if (!appointment) {
@@ -132,20 +132,20 @@ class AppointmentController {
             }
 
             let newTotalSum = 0
-            for (const procId of procedures) {
-                const service = await Service.findOne({ where: { id: procId } })
+            for (const proc of procedures) {
+                const service = await Service.findOne({ where: { id: proc.id } })
                 if (!service) {
-                    return next(ApiError.badRequest(`Service with id ${procId} not found`))
+                    return next(ApiError.badRequest(`Service with id ${proc.id} not found`))
                 }
                 newTotalSum += service.price
             }
 
-            await Appointment.update({ userId, clientId, date, time, endTime, note, petId }, { where: { id } })
+            await Appointment.update({ userId, clientId, date, time, endTime, note, petId, sum }, { where: { id } })
 
             await AppointmentService.destroy({ where: { appointmentId: id } })
 
-            for (const procId of procedures) {
-                await AppointmentService.create({ appointmentId: id, serviceId: procId })
+            for (const proc of procedures) {
+                await AppointmentService.create({ appointmentId: id, serviceId: proc.id })
             }
 
             const updatedAppointment = await Appointment.findOne({ where: { id } })
@@ -158,7 +158,7 @@ class AppointmentController {
     // Удаление приема (обратите внимание, что возврат списанных расходников не реализован)
     async delete(req, res, next) {
         try {
-            const { id } = req.query
+            const { id } = req.params
             await Appointment.update({isDeleted: true}, { where: { id } })
 
             return res.json("Deleted successfully")

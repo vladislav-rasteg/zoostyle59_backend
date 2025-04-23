@@ -1,5 +1,5 @@
 const ApiError = require('../error/ApiError')
-const { User, Appointment, AppointmentService, Service, Client } = require('../models/models')
+const { User, Appointment, AppointmentService, Service, Client, Pet } = require('../models/models')
 
 class CalendarController {
 
@@ -12,6 +12,7 @@ class CalendarController {
                 const appointments = await Appointment.findAll({
                     include: [
                         { model: Client, required: true },
+                        { model: Pet, required: true },
                         {
                             model: AppointmentService,
                             required: true,

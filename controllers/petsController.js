@@ -7,17 +7,23 @@ const {sequelize} = require('../db')
 class PetsController {
     async fetch(req, res, next) {
         try {
-            let {page, limit, search} = req.query
+            let {page, limit, search, clientId} = req.query
 
             page = page || 1
             limit = limit || 1000
             let offset = page * limit - limit
 
             const engSearch = (search && search.length > 1) ? slugify(search.toLowerCase(), {separator: " "}) : null;
+            
+            let where = {isDeleted: false}
+
+            if(clientId){
+                where.clientId = clientId
+            }
 
             const options = {
                 subQuery: false,
-                where: {isDeleted: false},
+                where,
                 include: [
                     {
                         model: Client
