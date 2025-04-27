@@ -104,15 +104,28 @@ const AppointmentService = sequelize.define('appointmentService', {
   serviceId: { type: DataTypes.INTEGER, allowNull: false },
 });
 
-const Product = sequelize.define('product', {
-  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-  name: { type: DataTypes.STRING, unique: false, allowNull: false, defaultValue: '' },
-  price: { type: DataTypes.FLOAT, unique: false, allowNull: false, defaultValue: 0 },
-  count: { type: DataTypes.INTEGER, unique: false, defaultValue: 0 },
-  
-  isForService: { type: DataTypes.BOOLEAN, unique: false, defaultValue: false },
-  isDeleted: { type: DataTypes.BOOLEAN, unique: false, defaultValue: false },
-});
+const Product = sequelize.define('product', 
+  {
+    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+    name: { type: DataTypes.STRING, unique: false, allowNull: false, defaultValue: '' },
+    nameEng: { type: DataTypes.STRING, unique: false, allowNull: false, defaultValue: '' },
+    price: { type: DataTypes.FLOAT, unique: false, allowNull: false, defaultValue: 0 },
+    count: { type: DataTypes.INTEGER, unique: false, defaultValue: 0 },
+    
+    isForService: { type: DataTypes.BOOLEAN, unique: false, defaultValue: false },
+    isDeleted: { type: DataTypes.BOOLEAN, unique: false, defaultValue: false },
+  },
+  {
+    indexes: [
+      {
+        fields: ['nameEng'],
+        using: 'gin',
+        operator: 'gin_trgm_ops',
+        concurrently: true,
+      },
+    ],
+  }
+);
 
 const Sale = sequelize.define('sale', {
   id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
@@ -123,7 +136,7 @@ const Sale = sequelize.define('sale', {
   isDeleted: { type: DataTypes.BOOLEAN, unique: false, defaultValue: false },
 });
 
-const SaleProduct = sequelize.define('SaleProduct', {
+const SaleProduct = sequelize.define('saleProduct', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
   saleId: { type: DataTypes.UUID, allowNull: false },
   productId: { type: DataTypes.INTEGER, allowNull: false },

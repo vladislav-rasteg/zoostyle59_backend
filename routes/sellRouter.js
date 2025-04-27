@@ -1,13 +1,13 @@
 const Router = require('express')
 const router = new Router()
-const productController = require('../controllers/productController')
+const sellController = require('../controllers/sellController')
 const authMiddleware = require('../middleware/authMiddleware')
 const checkRole = require('../middleware/checkRoleMiddleware')
 
 // router.get('/', checkRole('ADMINISTRATOR'), clientsController.fetch)
-router.get('/', productController.fetch)
-router.post('/', productController.create)
-router.put('/:id', productController.update)
-router.delete('/:id', productController.delete)
+router.get('/', sellController.fetch)
+router.post('/', sellController.create)
+router.put('/:id', sellController.update)
+router.delete('/:id', sellController.delete)
 
 module.exports = router

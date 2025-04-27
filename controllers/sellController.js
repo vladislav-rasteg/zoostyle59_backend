@@ -1,10 +1,26 @@
 const ApiError = require('../error/ApiError')
-const { User, Sale, Client, SaleProduct } = require('../models/models')
+const { User, Sale, Client, SaleProduct, Product } = require('../models/models')
 
 class SellController {
     async fetch(req, res, next) {
         try {
-            const sales = await Sale.findAndCountAll({ include: [{model: Client, required: false}], order: [['id', 'ASC']]})
+            let {page, limit} = req.query
+
+            page = page || 1
+            limit = limit || 1000
+            let offset = page * limit - limit
+
+            const sales = await Sale.findAndCountAll({ 
+                include: [
+                    {model: Client, required: false},
+                    {model: User, required: false},
+                    {model: SaleProduct, required: false, include: [{model: Product, required: false}]},
+                ], 
+                where: {isDeleted: false},
+                order: [['id', 'ASC']], 
+                limit, 
+                offset
+            })
             return res.json(sales)
         } catch (e) {
             next(ApiError.badRequest(e.message))
@@ -36,7 +52,7 @@ class SellController {
     // Обновление продажи
     async update(req, res, next) {
         try {
-            const { id } = req.query
+            const { id } = req.params
             const { userId, clientId, sum, products } = req.body
 
             // Находим существующую продажу
@@ -53,7 +69,7 @@ class SellController {
                 for (const prod of products) {
                     await SaleProduct.create({
                         saleId: id,
-                        productId: prod.id,
+                        productId: prod.productId,
                         count: prod.count,
                     })
                 }
@@ -68,7 +84,7 @@ class SellController {
     // Удаление продажи
     async delete(req, res, next) {
         try {
-            const { id } = req.query
+            const { id } = req.params
 
             const sale = await Sale.findOne({ where: { id } })
             if (!sale) {

@@ -21,30 +21,16 @@ class ClientsController {
                 include: [
                   {
                     model: Appointment,
-                    attributes: [],
                     required: false,
                     where: { isDeleted: false },
                   },
                   {
                     model: Sale,
-                    attributes: [],
                     required: false,
                     where: { isDeleted: false },
                   },
                 ],
-                attributes: {
-                  include: [
-                    [fn('COALESCE', fn('SUM', col('appointments.sum')), 0), 'appointmentsTotal'],
-                    [fn('COALESCE', fn('SUM', col('sales.sum')), 0), 'salesTotal'],
-                    [
-                      literal(
-                        'COALESCE(SUM(appointments.sum),0) + COALESCE(SUM(sales.sum),0)',
-                      ),
-                      'total',
-                    ],
-                  ],
-                },
-                group: ['client.id'],
+                group: ['client.id', 'sales.id', 'appointments.id'],
                 order: [['surname', 'ASC']],
                 limit, 
                 offset
@@ -69,6 +55,19 @@ class ClientsController {
           
             const count = await Client.count({ where: options.where, distinct: true, col: 'id' })
             const clients = await Client.findAndCountAll(options);
+            clients.rows.forEach((client) => {
+                let appointmentsTotal = 0
+                let salesTotal = 0
+                if(client.appointments){
+                    appointmentsTotal = client.appointments.reduce((accum, item) => accum + item.sum, 0)
+                    client.dataValues.appointmentsTotal = appointmentsTotal
+                }
+                if(client.sales){
+                    salesTotal = client.sales.reduce((accum, item) => accum + item.sum, 0)
+                    client.dataValues.salesTotal = salesTotal
+                }
+                client.dataValues.total = appointmentsTotal + salesTotal
+            })
             clients.count = count;
             return res.json(clients);
         } catch (e) {
