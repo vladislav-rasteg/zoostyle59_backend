@@ -1,7 +1,7 @@
 const ApiError = require('../error/ApiError')
-const { User, Sale, Client, SaleProduct, Product } = require('../models/models')
+const { User, Purchase, Client, SaleProduct, Product, PurchaseProduct } = require('../models/models')
 
-class SellController {
+class PurchaseController {
     async fetch(req, res, next) {
         try {
             let {page, limit} = req.query
@@ -10,18 +10,17 @@ class SellController {
             limit = limit || 1000
             let offset = page * limit - limit
 
-            const sales = await Sale.findAndCountAll({ 
+            const purchases = await Purchase.findAndCountAll({ 
                 include: [
-                    {model: Client, required: false},
                     {model: User, required: false},
-                    {model: SaleProduct, required: false, include: [{model: Product, required: false}]},
+                    {model: PurchaseProduct, required: false, include: [{model: Product, required: false}]},
                 ], 
                 where: {isDeleted: false},
                 order: [['id', 'ASC']], 
                 limit, 
                 offset
             })
-            return res.json(sales)
+            return res.json(purchases)
         } catch (e) {
             next(ApiError.badRequest(e.message))
         }
@@ -29,24 +28,23 @@ class SellController {
 
     async create(req, res, next) {
         try {
-            const { userId, clientId, sum, products } = req.body
+            const { userId, note, sum, products } = req.body
 
-            const sale = await Sale.create({ userId, clientId, sum })
+            const purchase = await Purchase.create({ userId, note, sum })
 
             if (products && Array.isArray(products)) {
                 for (const prod of products) {
-                    await SaleProduct.create({
-                        saleId: sale.id,
+                    await PurchaseProduct.create({
+                        purchaseId: purchase.id,
                         productId: prod.productId,
                         count: prod.count,
                     })
 
-                    await Product.decrement({count: prod.count}, {where: {id: prod.productId}})
+                    await Product.increment({count: prod.count}, {where: {id: prod.productId}})
                 }
             }
-            
 
-            return res.json(sale)
+            return res.json(purchase)
         } catch (e) {
             next(ApiError.badRequest(e.message))
         }
@@ -56,36 +54,35 @@ class SellController {
     async update(req, res, next) {
         try {
             const { id } = req.params
-            const { userId, clientId, sum, products } = req.body
+            const { userId, note, sum, products } = req.body
 
             // Находим существующую продажу
-            const sale = await Sale.findOne({ where: { id } })
-            if (!sale) {
-                return next(ApiError.badRequest('Sale not found'))
+            const purchase = await Purchase.findOne({ where: { id } })
+            if (!purchase) {
+                return next(ApiError.badRequest('Purchase not found'))
             }
 
-            const updatedSale = await Sale.update({ userId, clientId, sum }, { where: { id }, returning: true })
+            const updatedPurchase = await Purchase.update({ userId, note, sum }, { where: { id }, returning: true })
 
-            const saleProducts = await SaleProduct.findAll({ where: { saleId: id } })
-            for (const sp of saleProducts) {
-                await Product.increment({count: sp.count}, {where: {id: sp.productId}})
+            const purchaseProducts = await PurchaseProduct.findAll({ where: { purchaseId: id } })
+            for (const prod of purchaseProducts) {
+                await Product.decrement({count: prod.count}, {where: {id: prod.productId}})
             }
 
-            await SaleProduct.destroy({ where: { saleId: id } })
+            await PurchaseProduct.destroy({ where: { purchaseId: id } })
             
             if (products && Array.isArray(products)) {
                 for (const prod of products) {
-                    await SaleProduct.create({
-                        saleId: id,
+                    await PurchaseProduct.create({
+                        purchaseId: id,
                         productId: prod.productId,
                         count: prod.count,
                     })
-
-                    await Product.decrement({count: prod.count}, {where: {id: prod.productId}})
+                    await Product.increment({count: prod.count}, {where: {id: prod.productId}})
                 }
             }
 
-            return res.json(updatedSale[1][0])
+            return res.json(updatedPurchase[1][0])
         } catch (e) {
             next(ApiError.badRequest(e.message))
         }
@@ -96,12 +93,12 @@ class SellController {
         try {
             const { id } = req.params
 
-            const sale = await Sale.findOne({ where: { id } })
+            const sale = await Purchase.findOne({ where: { id } })
             if (!sale) {
                 return next(ApiError.badRequest('Sale not found'))
             }
 
-            await Sale.update({isDeleted: true}, {where: {id}})
+            await Purchase.update({isDeleted: true}, {where: {id}})
 
             return res.json("Deleted successfully")
         } catch (e) {
@@ -110,4 +107,4 @@ class SellController {
     }
 }
 
-module.exports = new SellController()
+module.exports = new PurchaseController()

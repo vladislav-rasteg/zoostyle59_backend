@@ -148,6 +148,8 @@ const Purchase = sequelize.define('purchase', {
   userId: { type: DataTypes.INTEGER, allowNull: false },
   note: { type: DataTypes.TEXT, unique: false, allowNull: false, defaultValue: '' },
   sum: { type: DataTypes.FLOAT, allowNull: false },
+
+  isDeleted: { type: DataTypes.BOOLEAN, unique: false, defaultValue: false },
 });
 
 const PurchaseProduct = sequelize.define('purchaseProduct', {
