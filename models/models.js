@@ -28,6 +28,7 @@ const Pet = sequelize.define('pet', {
     sex: { type: DataTypes.STRING, unique: false, allowNull: true },
     birth: { type: DataTypes.DATEONLY, unique: false, allowNull: true },
     breed: { type: DataTypes.STRING, unique: false, allowNull: true },
+    type: { type: DataTypes.STRING, unique: false, allowNull: true },
     feautures: { type: DataTypes.TEXT, unique: false, allowNull: true, defaultValue: '' },
     clientId: { type: DataTypes.INTEGER, allowNull: false },
 

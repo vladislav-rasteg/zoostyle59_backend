@@ -3,13 +3,13 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up (queryInterface, Sequelize) {
-    await queryInterface.addColumn('procedures', 'groupId', {
-      type: Sequelize.INTEGER,
+    await queryInterface.addColumn('pets', 'type', {
+      type: Sequelize.STRING,
       allowNull: true,
     });
   },
 
   async down (queryInterface, Sequelize) {
-    await queryInterface.removeColumn('procedures', 'groupId');
+    await queryInterface.removeColumn('pets', 'type');
   }
 };

@@ -4,17 +4,27 @@ const {
     AppointmentService,  
     Service,
     Pet,
-    Client
+    Client,
+    User
 } = require('../models/models')
 
 class AppointmentController {
     async fetch(req, res, next) {
         try {
+            let {page, limit, employeeId, date} = req.query
+
+            page = page || 1
+            limit = limit || 1000
+            let offset = page * limit - limit
+            
+            const where = {
+                isDeleted: false,
+                ...(employeeId ? {userId: employeeId} : {}),
+                ...(date ? {date} : {}),
+            }
+
             const appointments = await Appointment.findAndCountAll({ 
                 include: [
-                    {model: User, required: true},
-                    {model: Client, required: true},
-                    {model: Pet, required: true},
                     {
                         model: AppointmentService,
                         required: true,
@@ -26,8 +36,26 @@ class AppointmentController {
                             },
                         ],
                     },
+                    {model: User, required: true},
+                    {model: Client, required: true},
+                    {model: Pet, required: true},
+                    { model: User, required: true },
+                    {
+                        model: AppointmentService,
+                        required: false,
+                        attributes: ["id"],
+                        include: [
+                            {
+                                model: Service,
+                                required: true,
+                            },
+                        ],
+                    },
                 ],
-                order: [['date', 'DESC'], ['time', 'DESC']] 
+                where,
+                order: [['date', 'DESC'], ['time', 'DESC']],
+                limit, 
+                offset
             })
             return res.json(appointments)
         } catch (e) {

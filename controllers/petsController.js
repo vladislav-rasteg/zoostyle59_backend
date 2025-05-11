@@ -105,7 +105,7 @@ class PetsController {
 
     async create(req, res, next) {
         try {
-            const {name, sex, birth, breed, feautures, clientId} = req.body
+            const {name, sex, birth, type, breed, feautures, clientId} = req.body
 
             if (!name) {
                 return next(ApiError.badRequest("Имя питомца не указано"))
@@ -113,7 +113,7 @@ class PetsController {
 
             const nameEng = slugify(name, {separator: " "})
 
-            const pet = await Pet.create({name, nameEng, sex, birth, breed, feautures, clientId})
+            const pet = await Pet.create({name, nameEng, sex, birth, type, breed, feautures, clientId})
             return res.json(pet)
         } catch (e) {
             console.log(e)
@@ -123,11 +123,11 @@ class PetsController {
     async update(req, res, next) {
         try {
             const {id} = req.params;
-            const {name, sex, birth, breed, feautures, clientId} = req.body
+            const {name, sex, birth, type, breed, feautures, clientId} = req.body
 
             const nameEng = slugify(name, {separator: " "})
 
-            const pet = await Pet.update({name, nameEng, sex, birth, breed, feautures, clientId}, {where: {id}, returning: true})
+            const pet = await Pet.update({name, nameEng, sex, birth, type, breed, feautures, clientId}, {where: {id}, returning: true})
             
             return res.json(pet[1][0])
         } catch (e) {

@@ -20,7 +20,7 @@ class ProductController {
             const options = {
                 subQuery: false,
                 where,
-                order: [['name', 'ASC']],
+                order: [['count', 'ASC']],
                 limit, 
                 offset
               };
