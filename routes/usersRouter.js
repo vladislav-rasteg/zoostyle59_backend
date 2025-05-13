@@ -9,6 +9,6 @@ router.get('/auth', authMiddleware, usersController.check)
 router.post('/', checkRole('ADMINISTRATOR'), usersController.create)
 router.delete('/:id', checkRole('ADMINISTRATOR'), usersController.delete)
 router.put('/:id', checkRole('ADMINISTRATOR'), usersController.update)
-router.get('/', checkRole('ADMINISTRATOR'), usersController.fetch)
+router.get('/', usersController.fetch)
 
 module.exports = router

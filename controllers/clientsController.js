@@ -18,19 +18,7 @@ class ClientsController {
             const options = {
                 subQuery: false,
                 where: {isDeleted: false},
-                include: [
-                  {
-                    model: Appointment,
-                    required: false,
-                    where: { isDeleted: false },
-                  },
-                  {
-                    model: Sale,
-                    required: false,
-                    where: { isDeleted: false },
-                  },
-                ],
-                group: ['client.id', 'sales.id', 'appointments.id'],
+                group: ['client.id'],
                 order: [['surname', 'ASC']],
                 limit, 
                 offset
@@ -53,9 +41,14 @@ class ClientsController {
                 ];
             }          
           
-            const count = await Client.count({ where: options.where, distinct: true, col: 'id' })
+            const count = await Client.count({ where: options.where, order: [['surname', 'ASC']], distinct: true, col: 'id' })
             const clients = await Client.findAndCountAll(options);
-            clients.rows.forEach((client) => {
+            
+            clients.rows = await Promise.all(clients.rows.map(async (client) => {
+                
+                client.appointments = await Appointment.findAll({where: { clientId: client.id, isDeleted: false }})
+                client.sales = await Sale.findAll({where: { clientId: client.id, isDeleted: false }})
+
                 let appointmentsTotal = 0
                 let salesTotal = 0
                 if(client.appointments){
@@ -67,7 +60,9 @@ class ClientsController {
                     client.dataValues.salesTotal = salesTotal
                 }
                 client.dataValues.total = appointmentsTotal + salesTotal
-            })
+
+                return client
+            }))
             clients.count = count;
             return res.json(clients);
         } catch (e) {

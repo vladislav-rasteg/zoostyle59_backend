@@ -6,7 +6,7 @@ const checkRole = require('../middleware/checkRoleMiddleware')
 
 router.get('/', appointmentController.fetch)
 router.post('/', checkRole('ADMINISTRATOR'), appointmentController.create)
-router.put('/:id', checkRole('ADMINISTRATOR'), appointmentController.update)
+router.put('/:id', appointmentController.update)
 router.delete('/:id', checkRole('ADMINISTRATOR'), appointmentController.delete)
 
 module.exports = router
