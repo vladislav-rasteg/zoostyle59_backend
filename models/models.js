@@ -21,6 +21,13 @@ const User = sequelize.define('user', {
   isDeleted: { type: DataTypes.BOOLEAN, unique: false, defaultValue: false },
 });
 
+const Notification = sequelize.define('notification', {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  appointmentId: { type: DataTypes.INTEGER, allowNull: false },
+  dateTime: { type: DataTypes.DATE, allowNull: false },
+  isSent: { type: DataTypes.BOOLEAN, unique: false, defaultValue: false },
+});
+
 const Pet = sequelize.define('pet', {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     name: { type: DataTypes.STRING, unique: false, allowNull: true, defaultValue: '' },
@@ -189,6 +196,9 @@ User.hasMany(Appointment);
 Pet.belongsTo(Client);
 Client.hasMany(Pet);
 
+Notification.belongsTo(Appointment);
+Appointment.hasMany(Notification);
+
 AppointmentService.belongsTo(Appointment);
 Appointment.hasMany(AppointmentService);
 Appointment.belongsTo(Pet);
@@ -211,5 +221,6 @@ module.exports = {
   Pet,
   Purchase,
   PurchaseProduct,
-  ServicesGroup
+  ServicesGroup,
+  Notification
 };

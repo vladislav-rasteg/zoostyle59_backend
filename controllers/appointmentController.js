@@ -5,7 +5,8 @@ const {
     Service,
     Pet,
     Client,
-    User
+    User,
+    Notification
 } = require('../models/models')
 
 class AppointmentController {
@@ -122,7 +123,7 @@ class AppointmentController {
 
     async create(req, res, next) {
         try {
-            const { userId, clientId, date, time, endTime, note, petId, procedures, sum } = req.body
+            const { userId, clientId, date, time, endTime, note, petId, procedures, sum, notification } = req.body
 
             if (!procedures || !Array.isArray(procedures) || procedures.length === 0) {
                 return next(ApiError.badRequest("No procedures provided"))
@@ -143,6 +144,23 @@ class AppointmentController {
                 await AppointmentService.create({ appointmentId: appointment.id, serviceId: proc.id })
             }
 
+            if(notification){
+                const notificationDate = new Date(date)
+                const hours = time.split(":")[0]
+                const minutes = time.split(":")[1]
+                notificationDate.setHours(Number(hours), Number(minutes))
+                notificationDate.setMinutes(notificationDate.getMinutes() - notification)
+
+                const now = new Date()
+                if (notificationDate > now){
+                    await Notification.create({
+                        appointmentId: appointment.id,
+                        dateTime: notificationDate,
+                        isSent: false
+                    })
+                }
+            }
+
             return res.json(appointment)
         } catch (e) {
             next(ApiError.badRequest(e.message))
@@ -152,7 +170,7 @@ class AppointmentController {
     async update(req, res, next) {
         try {
             const { id } = req.params
-            const { userId, clientId, date, time, endTime, note, petId, procedures, sum } = req.body
+            const { userId, clientId, date, time, endTime, note, petId, procedures, sum, notification } = req.body
 
             const appointment = await Appointment.findOne({ where: { id } })
             if (!appointment) {
@@ -174,6 +192,23 @@ class AppointmentController {
 
             for (const proc of procedures) {
                 await AppointmentService.create({ appointmentId: id, serviceId: proc.id })
+            }
+
+            if(notification){
+                const notificationDate = new Date(date)
+                const hours = time.split(":")[0]
+                const minutes = time.split(":")[1]
+                notificationDate.setHours(Number(hours), Number(minutes))
+                notificationDate.setMinutes(notificationDate.getMinutes() - notification)
+
+                const now = new Date()
+                if (notificationDate > now){
+                    await Notification.create({
+                        appointmentId: appointment.id,
+                        dateTime: notificationDate,
+                        isSent: false
+                    })
+                }
             }
 
             const updatedAppointment = await Appointment.findOne({ where: { id } })

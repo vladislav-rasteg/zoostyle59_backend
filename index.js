@@ -3,6 +3,8 @@ const {sequelize} = require('./db');
 const models = require('./models/models');
 const cors = require('cors');
 const router = require('./routes/index');
+const sendNotificationMails = require('./utils/sendMails');
+const { CronJob } = require('cron');
 const createServer = require('./utils/server');
 
 const env = process.env.NODE_ENV || 'local';
@@ -16,6 +18,14 @@ const start = async () => {
     try {
         // await sequelize.authenticate();
         await sequelize.sync();
+
+        new CronJob(
+            '* * * * *',
+            sendNotificationMails,
+            null,
+            true
+        );
+
         app.listen(PORT, () => console.log(`Server started on ${PORT}`));
     } catch (e) {
         console.log(e);
