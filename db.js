@@ -10,21 +10,34 @@ const db_uri = `postgres://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${p
 
 
 
-const sequelize = new Sequelize(db_uri, {
-    dialect: "postgres",
-    protocol: "postgres",
-    dialectOptions: {
-        ssl: process.env.YANDEX_DB_CERT_PATH
-            ? {
-                  require: true,
-                  rejectUnauthorized: true,
-                  ca: fs
-                      .readFileSync(process.env.YANDEX_DB_CERT_PATH)
-                      .toString(),
-              }
-            : undefined,
-    },
-});
+// const sequelize = new Sequelize(db_uri, {
+//     dialect: "postgres",
+//     protocol: "postgres",
+//     // dialectOptions: {
+//     //     ssl: process.env.YANDEX_DB_CERT_PATH
+//     //         ? {
+//     //               require: true,
+//     //               rejectUnauthorized: true,
+//     //               ca: fs
+//     //                   .readFileSync(process.env.YANDEX_DB_CERT_PATH)
+//     //                   .toString(),
+//     //           }
+//     //         : undefined,
+//     // },
+// });
+
+const sequelize = new Sequelize(
+    process.env.DB_NAME,
+    process.env.DB_USER,
+    process.env.DB_PASSWORD,
+    {
+        dialect: 'postgres',
+        protocol: 'postgres',
+        dialectOptions: {},
+        host: process.env.DB_HOST,
+        port: process.env.DB_PORT
+    }
+)
 
 const s3 = new EasyYandexS3({
     auth: {
