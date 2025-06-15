@@ -137,7 +137,7 @@ const Product = sequelize.define('product',
 
 const Sale = sequelize.define('sale', {
   id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
-  userId: { type: DataTypes.INTEGER, allowNull: false },
+  userId: { type: DataTypes.INTEGER, allowNull: true },
   clientId: { type: DataTypes.INTEGER, allowNull: true },
   sum: { type: DataTypes.FLOAT, allowNull: false },
 
